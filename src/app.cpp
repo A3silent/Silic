@@ -64,13 +64,14 @@ namespace silic {
             float now   = glfwGetTime();
             float dTime = now - last;
             last        = now;
-            snprintf(title, 128, "Silic || FPS: %.0f", 1.f/dTime);
 
             //Window
-            glfwSetWindowTitle(window, title);
             glfwPollEvents();
-            m_renderer.renderer_clear();
+            snprintf(title, 128, "Silic || FPS: %.0f", 1.f/dTime);
+            glfwSetWindowTitle(window, title);
 
+            m_renderer.renderer_clear();
+            m_renderer.renderer_draw_point((vec2_t){100.f, 100.f}, 5.f, (vec4_t){1.f, 1.f, 1.f, 1.f});
             glfwSwapBuffers(window);
         }
         glfwTerminate();

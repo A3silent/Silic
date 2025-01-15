@@ -1,6 +1,7 @@
 #pragma once
 #include <glad/glad.h>
-#include <gl_helpers.hpp>
+#include "gl_helpers.hpp"
+#include "matrix.hpp"
 
 namespace silic{
     class renderer{
@@ -9,11 +10,14 @@ namespace silic{
             ~renderer();
 
             void init_shader();
+            void init_projection();
             void init_quad();
             void renderer_init(int w, int h);
             void renderer_clear();
+            void renderer_draw_point(vec2_t point, float size, vec4_t color);
 
-            static GLuint program;
+            GLuint program;
+            GLuint model_location;
 
         private:
             int width, height;
