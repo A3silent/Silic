@@ -27,8 +27,8 @@ namespace silic{
         GLFWwindow* window;
 
     private:
-        static const int WIDTH = 800;
-        static const int HEIGHT = 600;
+        static const int WIDTH = 1200;
+        static const int HEIGHT = 675;
         void processInput(GLFWwindow *window);
         void framebuffer_size_callback(GLFWwindow* window, int width, int height);
     };

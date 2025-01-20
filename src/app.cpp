@@ -11,6 +11,7 @@ namespace silic {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         //create window
         window = glfwCreateWindow(WIDTH, HEIGHT, "Silic", NULL, NULL);
+        glfwMakeContextCurrent(window);
         if (window == NULL)
         {
             std::cout << "Failed to create GLFW window" << std::endl;
@@ -38,8 +39,6 @@ namespace silic {
 
     //main function
     void app::run() {
-        glfwMakeContextCurrent(window);
-        glfwSetFramebufferSizeCallback(window, silic::framebuffer_size_callback);
 
         //glad: load all OpenGL function pointers
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -50,7 +49,6 @@ namespace silic {
             
         silic::renderer m_renderer;
         m_renderer.renderer_init(WIDTH, HEIGHT);
-
 
         char title[128];
         float last = 0.f;
@@ -71,7 +69,8 @@ namespace silic {
             glfwSetWindowTitle(window, title);
 
             m_renderer.renderer_clear();
-            m_renderer.renderer_draw_point((vec2_t){100.f, 100.f}, 5.f, (vec4_t){1.f, 1.f, 1.f, 1.f});
+            m_renderer.renderer_draw_point((vec2_t){100.f, 100.f}, 5.f,
+                        (vec4_t){1.f, 0.f, 0.f, 1.f});
             glfwSwapBuffers(window);
         }
         glfwTerminate();
