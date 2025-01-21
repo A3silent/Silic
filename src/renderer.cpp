@@ -47,6 +47,8 @@ namespace silic{
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
     }
 
+    
+
     void renderer::renderer_draw_line(vec2_t p0, vec2_t p1, float width, vec4_t color) {
         float x = p1.x - p0.x, y = p0.y - p1.y;
         float r = sqrtf(x * x + y * y), angle = atan2f(y, x);
@@ -56,6 +58,18 @@ namespace silic{
         mat4_t scale    = mat4_scale((vec3_t){r, width, 1.f});
         mat4_t rotation = mat4_rotate((vec3_t){0.f, 0.f, 1.f}, angle);
         mat4_t model    = mat4_mul(mat4_mul(scale, rotation), translation);
+
+        glUniform4fv(color_location, 1, color.v);
+        glUniformMatrix4fv(model_location, 1, GL_FALSE, model.v);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+    }
+
+
+    void renderer::renderer_draw_quad(vec2_t center, vec2_t size, float angle, vec4_t color) {
+        mat4_t translation = mat4_translate((vec3_t){center.x, center.y, 0.f});
+        mat4_t scale       = mat4_scale((vec3_t){size.x, size.y, 1.f});
+        mat4_t rotation    = mat4_rotate((vec3_t){0.f, 0.f, 1.f}, angle);
+        mat4_t model       = mat4_mul(mat4_mul(scale, rotation), translation);
 
         glUniform4fv(color_location, 1, color.v);
         glUniformMatrix4fv(model_location, 1, GL_FALSE, model.v);

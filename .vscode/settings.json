@@ -108,7 +108,8 @@
     "stdexcept": "cpp",
     "streambuf": "cpp",
     "cinttypes": "cpp",
-    "typeinfo": "cpp"
+    "typeinfo": "cpp",
+    "cassert": "cpp"
   },
   "cmake.sourceDirectory": "D:/gamedesign/opengl/Silic/include/glm"
 }

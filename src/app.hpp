@@ -24,11 +24,13 @@ namespace silic{
         app& operator=(const app&) = delete;
 
         void run();
+        void load_map();
         GLFWwindow* window;
 
     private:
-        static const int WIDTH = 1200;
-        static const int HEIGHT = 675;
+        const double PI = 3.14159265358979323846;
+        static const int WIDTH = 800;
+        static const int HEIGHT = 600;
         void processInput(GLFWwindow *window);
         void framebuffer_size_callback(GLFWwindow* window, int width, int height);
     };
