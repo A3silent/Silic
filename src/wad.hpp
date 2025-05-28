@@ -1,6 +1,9 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <cstdint>
+
+#include "map.hpp"
 
 struct lump_t{
     std::string name;
@@ -20,5 +23,8 @@ struct wad_t {
 namespace silic{
     int load_wad(const char*filename, wad_t *wad);
     void wad_free(wad_t *wad);
-
+    int wad_read_map(std::string mapname, map_t *map, const wad_t *wad);
+    int wad_find_lump(std::string lumpname, const wad_t *wad);
+    void read_vertices(map_t *map, const lump_t *lump);
+    void read_linedefs(map_t *map, const lump_t *lump);
 }

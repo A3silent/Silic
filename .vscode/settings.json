@@ -109,7 +109,15 @@
     "streambuf": "cpp",
     "cinttypes": "cpp",
     "typeinfo": "cpp",
-    "cassert": "cpp"
+    "cassert": "cpp",
+    "charconv": "cpp",
+    "optional": "cpp",
+    "format": "cpp",
+    "ranges": "cpp",
+    "span": "cpp",
+    "text_encoding": "cpp",
+    "variant": "cpp"
   },
-  "cmake.sourceDirectory": "D:/gamedesign/opengl/Silic/include/glm"
+  "cmake.sourceDirectory": "D:/gamedesign/opengl/Silic/include/glm",
+  "cmake.ignoreCMakeListsMissing": true
 }

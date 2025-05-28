@@ -23,7 +23,7 @@ namespace silic{
         app(const app&) = delete;
         app& operator=(const app&) = delete;
 
-        void run();
+        void run(std::string mapname);
         void load_map();
         GLFWwindow* window;
 

@@ -45,7 +45,7 @@ namespace silic {
     }
 
     //main function
-    void app::run() {
+    void app::run(std::string mapname) {
 
         //glad: load all OpenGL function pointers
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -62,13 +62,31 @@ namespace silic {
         if(load_wad("../res/map/doom1.wad", &wad) != 0){
             std::cerr<<"Failed to load wad map"<<std::endl;
         }
-
-        std::cout<<"Loaded the wad map: "<<wad.id<<" num_lumps: "<<wad.num_lumps<<" dirctory: "<<wad.directory_offset<<std::endl;
-
-        std::cout<<"Lumps:"<<std::endl;
-        for(int i = 0; i < wad.num_lumps; i++){
-            std::cout<<wad.lumps[i].name<<" "<<wad.lumps[i].offset<<" "<<wad.lumps[i].size<<" "<<std::endl;
+        map_t map;
+        if(wad_read_map(mapname, &map, &wad) != 0){
+            std::cerr<<"Failed to read "<< mapname <<" from wad"<<std::endl;
         }
+
+        // for(int i = 0; i < map.num_vertices; i++){
+        //     std::cout<<"Vertex "<<i<<": "<<map.vertices[i].x<<", "<<map.vertices[i].y<<std::endl;
+        // }
+
+        // === coord mapping begin ===
+        // 20 pixels margin
+        vec2_t out_min = {20.f, 20.f};
+        vec2_t out_max = {WIDTH - 20.f, HEIGHT - 20.f};
+        vec2_t* remapped_vertices = (vec2_t*)malloc(sizeof(vec2_t) * map.num_vertices);
+        for (size_t i = 0; i < map.num_vertices; i++) {
+            // X axis mapping
+            remapped_vertices[i].x =
+                (std::max(map.min.x, std::min(map.vertices[i].x, map.max.x)) - map.min.x) *
+                (out_max.x - out_min.x) / (map.max.x - map.min.x) + out_min.x;
+            // Y axis mapping
+            remapped_vertices[i].y = HEIGHT -
+                ((std::max(map.min.y, std::min(map.vertices[i].y, map.max.y)) - map.min.y) *
+                (out_max.y - out_min.y) / (map.max.y - map.min.y) + out_min.y);
+        }
+        //
 
         float angle = 0.f;
         char title[128];
@@ -89,12 +107,15 @@ namespace silic {
             glfwPollEvents();
             snprintf(title, 128, "Silic || FPS: %.0f", 1.f/dTime);
             glfwSetWindowTitle(window, title);
+            for(size_t i = 0; i < map.num_linedefs; i++){
+                vec2_t start = remapped_vertices[map.linedefs[i].start_idx];
+                vec2_t end   = remapped_vertices[map.linedefs[i].end_idx];
+                m_renderer.renderer_draw_line(start, end, 1.f, (vec4_t){1.f, 0.f, 0.f, 1.f});
+            }
 
-            m_renderer.renderer_clear();
-            m_renderer.renderer_draw_point((vec2_t){WIDTH/2.f, HEIGHT/2.f}, 5.f, (vec4_t){1.f, 0.f, 0.f, 1.f});
-            m_renderer.renderer_draw_line((vec2_t){0.f, 0.f}, (vec2_t){WIDTH, HEIGHT}, 5.f, (vec4_t){0.f, 0.f, 1.f, 1.f});
-            m_renderer.renderer_draw_line((vec2_t){WIDTH, 0.f}, (vec2_t){0.f, HEIGHT}, 5.f, (vec4_t){0.f, 0.f, 1.f, 1.f});
-            m_renderer.renderer_draw_quad((vec2_t){100.f, 100.f}, (vec2_t){40.f, 40.f}, PI/4 + angle, (vec4_t){1.f, 1.f, 0.f, 1.f});
+            for(size_t i = 0; i < map.num_vertices; i++){
+                m_renderer.renderer_draw_point(remapped_vertices[i], 3.f, (vec4_t){1.f, 1.f, 0.f, 1.f});
+            }
 
             glfwSwapBuffers(window);
         }

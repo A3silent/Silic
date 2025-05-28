@@ -7,5 +7,5 @@
 int main()
 {
     silic::app first_app;
-    first_app.run();
+    first_app.run("E1M3");
 }
