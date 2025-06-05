@@ -5,6 +5,8 @@
 #include "vector.hpp"
 #include <math.h>
 #include <stdint.h>
+#include "mesh.hpp"
+#include <string>
 
 namespace silic{
     class renderer{
@@ -17,30 +19,22 @@ namespace silic{
             void init_quad();
             void renderer_init(int w, int h);
             void renderer_clear();
+            void renderer_set_projection(mat4_t projection);
+            void renderer_draw_mesh(mesh_t *mesh, mat4_t transformation, vec4_t color);
             void renderer_draw_point(vec2_t point, float size, vec4_t color);
             void renderer_draw_line(vec2_t p0, vec2_t p1, float width, vec4_t color);
             void renderer_draw_quad(vec2_t center, vec2_t size, float angle, vec4_t color);
+            void renderer_set_viewport(mat4_t view);
+            vec2 renderer_get_size();
+            mesh_t quad_mesh;
             GLuint program;
             GLuint color_location;
             GLuint model_location;
+            GLuint projection_location;
+            GLuint view_location;
                     
         private:
             float width, height;
-            const char *vertexShaderSource = 
-            "#version 330 core\n"
-            "layout(location = 0) in vec2 pos;\n"
-            "uniform mat4 model;\n"
-            "uniform mat4 projection;\n"
-            "void main(){\n"
-            "  gl_Position = projection * model * vec4(pos, 0.0, 1.0);\n"
-            "}\n\0";
-
-            const char *fragmentShaderSource = 
-            "#version 330 core\n"
-            "out vec4 fragColor;\n"
-            "uniform vec4 color;\n"
-            "void main(){\n"
-            "  fragColor = color;\n"
-            "}\n\0";
+            std::string load_shader_source(const char* filepath);
     };
 }

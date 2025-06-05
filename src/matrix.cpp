@@ -93,3 +93,46 @@ mat4_t mat4_rotate(const vec3_t axis, float angle) {
 
     return result;
 }
+
+mat4_t mat4_look_at(vec3_t eye, vec3_t target, vec3_t up) {
+  vec3_t zaxis = vec3_normalize(vec3_sub(target, eye));
+  vec3_t xaxis = vec3_normalize(vec3_cross(up, zaxis));
+  vec3_t yaxis = vec3_cross(zaxis, xaxis);
+
+  mat4_t result = {
+      .a1 = xaxis.x,
+      .a2 = yaxis.x,
+      .a3 = -zaxis.x,
+      .a4 = 0.0f,
+      .b1 = xaxis.y,
+      .b2 = yaxis.y,
+      .b3 = -zaxis.y,
+      .b4 = 0.0f,
+      .c1 = xaxis.z,
+      .c2 = yaxis.z,
+      .c3 = -zaxis.z,
+      .c4 = 0.0f,
+      .d1 = -vec3_dot(xaxis, eye),
+      .d2 = -vec3_dot(yaxis, eye),
+      .d3 = vec3_dot(zaxis, eye),
+      .d4 = 1.0f,
+  };
+
+  return result;
+}
+
+mat4_t mat4_perspective(float fov, float aspect_ratio, float near, float far) {
+  mat4_t result = {0};
+
+  float tan_half_fov = tanf(fov / 2.0f);
+  float range_inv    = 1.0f / (near - far);
+
+  result.a1 = 1.0f / (aspect_ratio * tan_half_fov);
+  result.b2 = 1.0f / tan_half_fov;
+  result.c3 = (near + far) * range_inv;
+  result.c4 = -1.0f;
+  result.d3 = 2.0f * near * far * range_inv;
+  result.d4 = 0.0f;
+
+  return result;
+}

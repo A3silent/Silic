@@ -1,4 +1,6 @@
 #include "renderer.hpp"
+#include <fstream>
+#include <sstream>
 
 namespace silic{
 
@@ -25,15 +27,34 @@ namespace silic{
         glClear(GL_COLOR_BUFFER_BIT);
     }
 
+    void renderer::renderer_set_projection(mat4_t projection) {
+        glUniformMatrix4fv(projection_location, 1, GL_FALSE, projection.v);
+    }
+
+    vec2 renderer::renderer_get_size(){
+        return (vec2){width, height};
+    }
+
     void renderer::init_shader(){
-        GLuint vertex = compile_shader(GL_VERTEX_SHADER, vertexShaderSource);
-        GLuint fragment = compile_shader(GL_FRAGMENT_SHADER, fragmentShaderSource);
+        std::string vertex_src = load_shader_source("../res/shaders/vert.shader");
+        std::string fragment_src = load_shader_source("../res/shaders/frag.shader");
+        GLuint vertex = compile_shader(GL_VERTEX_SHADER, vertex_src.c_str());
+        GLuint fragment = compile_shader(GL_FRAGMENT_SHADER, fragment_src.c_str());
         program = link_program(2, vertex, fragment);
 
         glUseProgram(program);
 
+        projection_location = glGetUniformLocation(program, "projection");
         model_location = glGetUniformLocation(program, "model");
+        view_location = glGetUniformLocation(program, "view");
         color_location = glGetUniformLocation(program, "color");
+    }
+
+    void renderer::renderer_draw_mesh(mesh_t *mesh, mat4_t transformation, vec4_t color){
+        glUniform4fv(color_location, 1, color.v);
+        glUniformMatrix4fv(model_location, 1, GL_FALSE, transformation.v);
+        glBindVertexArray(mesh->vao);
+        glDrawElements(GL_TRIANGLES, mesh->num_indices, GL_UNSIGNED_INT, NULL);
     }
 
     void renderer::renderer_draw_point(vec2_t point, float size,vec4_t color){
@@ -41,10 +62,7 @@ namespace silic{
         mat4_t scale = mat4_scale((vec3_t){size, size, 1.f});
         mat4_t model = mat4_mul(scale, translation);
 
-
-        glUniform4fv(color_location, 1, color.v);
-        glUniformMatrix4fv(model_location, 1, GL_FALSE, model.v);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+        renderer_draw_mesh(&quad_mesh, model, color);
     }
 
     
@@ -59,11 +77,8 @@ namespace silic{
         mat4_t rotation = mat4_rotate((vec3_t){0.f, 0.f, 1.f}, angle);
         mat4_t model    = mat4_mul(mat4_mul(scale, rotation), translation);
 
-        glUniform4fv(color_location, 1, color.v);
-        glUniformMatrix4fv(model_location, 1, GL_FALSE, model.v);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+        renderer_draw_mesh(&quad_mesh, model, color);
     }
-
 
     void renderer::renderer_draw_quad(vec2_t center, vec2_t size, float angle, vec4_t color) {
         mat4_t translation = mat4_translate((vec3_t){center.x, center.y, 0.f});
@@ -71,18 +86,16 @@ namespace silic{
         mat4_t rotation    = mat4_rotate((vec3_t){0.f, 0.f, 1.f}, angle);
         mat4_t model       = mat4_mul(mat4_mul(scale, rotation), translation);
 
-        glUniform4fv(color_location, 1, color.v);
-        glUniformMatrix4fv(model_location, 1, GL_FALSE, model.v);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+        renderer_draw_mesh(&quad_mesh, model, color);
     }
 
     void renderer::init_quad(){
         float vertices[] = {
-            .5f, .5f, //
-            .5f, -.5f,
-            -.5f,-.5f,
-            -.5f, .5f
-        };
+            .5f, .5f, 0.f, //
+            .5f, -.5f, 0.f,
+            -.5f,-.5f, 0.f,
+            -.5f, .5f, 0.f
+        };  
 
         uint32_t indices[] = {
             0, 1, 3,
@@ -90,26 +103,25 @@ namespace silic{
         };
 
         GLuint vao, vbo, ebo;
-        glGenVertexArrays(1, &vao);
-        glGenBuffers(1, &vbo);
-        glGenBuffers(1, &ebo);
 
-        glBindVertexArray(vao);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        mesh_create(&quad_mesh, 4, vertices, 6, indices, false);
+    }
 
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
-        glEnableVertexAttribArray(0);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
-                    GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    void renderer::renderer_set_viewport(mat4_t view){
+        glUniformMatrix4fv(view_location, 1, GL_FALSE, view.v);
     }
 
     void renderer::init_projection(){
         mat4_t projection = mat4_ortho(0.f, width, height, 0.f, -1.f, 1.f);
         GLuint projection_location = glGetUniformLocation(program, "projection");
         glUniformMatrix4fv(projection_location, 1, GL_FALSE, projection.v);
+        glUniformMatrix4fv(view_location, 1, GL_FALSE, mat4_identity().v);
+    }
+
+    std::string renderer::load_shader_source(const char* filepath) {
+        std::ifstream file(filepath);
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        return buffer.str();
     }
 }
