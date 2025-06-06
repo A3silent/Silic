@@ -2,17 +2,20 @@
 #include "matrix.hpp"
 #include <iostream>
 #include <math.h>
+#include "input.hpp" // Add this line if is_button_pressed is declared here, or declare the function below if not.
 
 #define FOV (3.14159265358979323846 / 3.f)
-
+#define PLAYER_SPEED (5.f)
+#define MOUSE_SENSITIVITY (0.002f)
 namespace silic {
 
 engine::engine() {}
 
 engine::~engine() {}
 
-void engine::init(wad_t* wad, const std::string& mapname, int width, int height) {
+void engine::init(Input* in, wad_t* wad, const std::string& mapname, int width, int height) {
     wad_ptr = wad;
+    input = in; // Copy the input object
 
     // 初始化渲染器
     m_renderer.renderer_init(width, height);
@@ -46,10 +49,51 @@ void engine::init(wad_t* wad, const std::string& mapname, int width, int height)
 
     mesh_create(&quad_mesh, 4, vertices, 6, indices, false);
 }
-
 void engine::update(float delta) {
+    float speed = input->is_button_pressed(button::KEY_LSHIFT) ? PLAYER_SPEED * 2.f : PLAYER_SPEED;
     camera_update_direction_vectors(&camera);
+    if(input->is_button_pressed(button::KEY_W)) {
+        camera.position = vec3_add(camera.position, vec3_scale(camera.forward, speed * delta));
+    }
+
+    if(input->is_button_pressed(button::KEY_S)) {
+        camera.position = vec3_add(camera.position, vec3_scale(camera.forward, -speed * delta));
+    }
+
+    if(input->is_button_pressed(button::KEY_A)) {
+        camera.position = vec3_add(camera.position, vec3_scale(camera.right, -speed * delta));
+    }
+
+    if(input->is_button_pressed(button::KEY_D)) {
+        camera.position = vec3_add(camera.position, vec3_scale(camera.right, speed * delta));
+    }
+
+    if(input->is_button_pressed(button::KEY_SPACE)) {
+        camera.position = vec3_add(camera.position, vec3_scale(camera.up, speed * delta));
+    }
+
+    if(input->is_button_pressed(button::KEY_LEFT_CONTROL)) {
+        camera.position = vec3_add(camera.position, vec3_scale(camera.up, -speed * delta));
+    }
+
+    if(input->is_button_pressed(button::MOUSE_LEFT)) {
+        if(!input->is_mouse_captured()) {
+            last_mouse_pos = input->get_mouse_position();
+            input->set_mouse_captured(true);
+        }
+        vec2_t mouse_pos = input->get_mouse_position();
+        float dx = mouse_pos.x - last_mouse_pos.x;
+        float dy = mouse_pos.y - last_mouse_pos.y;
+        last_mouse_pos = mouse_pos;
+        camera.yaw -= dx * MOUSE_SENSITIVITY;
+        camera.pitch -= dy * MOUSE_SENSITIVITY;
+        if (camera.pitch > 1.5f) camera.pitch = 1.5f;
+        if (camera.pitch < -1.5f) camera.pitch = -1.5f;
+    }else if(input->is_mouse_captured()) {
+        input->set_mouse_captured(false);
+    }
 }
+
 
 void engine::render() {
     m_renderer.renderer_clear(); // 清屏

@@ -1,5 +1,6 @@
 #include <iostream>
 #include "renderer.hpp"
+#include "input.hpp"
 #include "app.hpp"
 #include "wad.hpp"
 #include "engine.hpp"
@@ -44,7 +45,7 @@ namespace silic {
 
     //main function
     void app::run(std::string mapname) {
-
+        
         //glad: load all OpenGL function pointers
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
         {
@@ -53,13 +54,19 @@ namespace silic {
 
         // 使用 engine 类替代原有 renderer/map/wad 逻辑
         silic::engine eng;
+        silic::Input input;
+        input.init(window);
+        
 
         wad_t wad;
         if(load_wad("../res/map/doom1.wad", &wad) != 0){
             std::cerr<<"Failed to load wad map"<<std::endl;
         }
-
-        eng.init(&wad, mapname, WIDTH, HEIGHT);
+        
+        glfwSetKeyCallback(window, silic::Input::key_callback);
+        glfwSetMouseButtonCallback(window, silic::Input::mouse_button_callback);
+        glfwSetCursorPosCallback(window, silic::Input::mouse_position_callback);
+        eng.init(&input, &wad, mapname, WIDTH, HEIGHT);
 
         float angle = 0.f;
         char title[128];
