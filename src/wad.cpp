@@ -87,7 +87,7 @@ namespace silic{
 
     void read_vertices(map_t *map, const lump_t *lump) {
         map->num_vertices = lump->size / 4; // each vertex is 2+2=4 bytes
-        map->vertices     = (vec2_t*)malloc(sizeof(vec2_t) * map->num_vertices);
+        map->vertices     = new vec2_t[map->num_vertices];
 
         for (int i = 0, j = 0; i < lump->size; i += 4, j++) {
             map->vertices[j].x = (int16_t)READ_I16(lump->data, i);
@@ -102,7 +102,7 @@ namespace silic{
 
     void read_linedefs(map_t *map, const lump_t *lump){
         map->num_linedefs = lump->size / 14; // each linedef is 14 bytes
-        map->linedefs     = (linedef_t*)malloc(sizeof(linedef_t) * map->num_linedefs);
+        map->linedefs     = new linedef_t[map->num_linedefs];
 
         for (int i = 0, j = 0; i < lump->size; i += 14, j++) {
             map->linedefs[j].start_idx     = READ_I16(lump->data, i);
@@ -110,6 +110,25 @@ namespace silic{
             map->linedefs[j].flags         = READ_I16(lump->data, i + 4);
             map->linedefs[j].front_sidedef = READ_I16(lump->data, i + 10);
             map->linedefs[j].back_sidedef  = READ_I16(lump->data, i + 12);
+        }
+    }
+
+    void read_sidedefs(map_t *map, const lump_t *lump){
+        map->num_sidedefs = lump->size / 30; // each sidedef is 30 bytes
+        map->sidedefs = new sidedef_t[map->num_sidedefs];
+        
+        for (int i = 0, j = 0; i < lump->size; i += 30, j++) {
+            map->sidedefs[j].sector_idx = READ_I16(lump->data, i + 28);
+        }
+    }
+
+    void read_sectors(map_t *map, const lump_t *lump){
+        map->num_sectors = lump->size / 26; // each sector is 26 bytes
+        map->sectors = new sector_t[map->num_sectors];
+
+        for (int i = 0, j = 0; i < lump->size; i += 26, j++) {
+            map->sectors[j].floor   = (int16_t)READ_I16(lump->data, i);
+            map->sectors[j].ceiling = (int16_t)READ_I16(lump->data, i + 2);
         }
     }
 
@@ -123,6 +142,8 @@ namespace silic{
         std::cout << mapname <<" found at index: " << map_index << std::endl;
         read_vertices(map, &wad->lumps[map_index + VERTEXES_IDX]);
         read_linedefs(map, &wad->lumps[map_index + LINEDEFS_IDX]);
+        read_sidedefs(map, &wad->lumps[map_index + SIDEDEFS_IDX]);
+        read_sectors(map, &wad->lumps[map_index + SECTORS_IDX]);
         return 0; // Success
     }
 

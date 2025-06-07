@@ -96,8 +96,8 @@ mat4_t mat4_rotate(const vec3_t axis, float angle) {
 
 mat4_t mat4_look_at(vec3_t eye, vec3_t target, vec3_t up) {
   vec3_t zaxis = vec3_normalize(vec3_sub(target, eye));
-  vec3_t xaxis = vec3_normalize(vec3_cross(up, zaxis));
-  vec3_t yaxis = vec3_cross(zaxis, xaxis);
+  vec3_t xaxis = vec3_normalize(vec3_cross(zaxis, up));
+  vec3_t yaxis = vec3_cross(xaxis, zaxis);
 
   mat4_t result = {
       .a1 = xaxis.x,

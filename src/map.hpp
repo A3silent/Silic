@@ -6,10 +6,17 @@
 #include <stddef.h>
 #include <stdint.h>
 
+typedef struct sector{
+    int16_t floor, ceiling; // Floor and ceiling heights
+} sector_t;
+
 typedef struct linedef{
     uint16_t start_idx, end_idx, flags, front_sidedef, back_sidedef; // Indices of the start and end vertices
-    
 } linedef_t;
+
+typedef struct sidedef{
+    uint16_t sector_idx; // Index of the sector this sidedef belongs to
+} sidedef_t;
 
 typedef struct map{
     vec2_t *vertices; // Array of vertices
@@ -18,7 +25,10 @@ typedef struct map{
     vec2_t max;      // Maximum coordinates (bounding box)
     size_t     num_linedefs;
     linedef_t *linedefs;
-    // Add other map-related data structures as needed
+    size_t num_sidedefs;
+    sidedef_t *sidedefs; // Assuming sidedefs are similar to linedefs
+    size_t num_sectors;
+    sector_t *sectors; // Array of sectors
 }map_t;
 
 

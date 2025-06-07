@@ -27,4 +27,6 @@ namespace silic{
     int wad_find_lump(std::string lumpname, const wad_t *wad);
     void read_vertices(map_t *map, const lump_t *lump);
     void read_linedefs(map_t *map, const lump_t *lump);
+    void read_sidedefs(map_t *map, const lump_t *lump);
+    void read_sectors(map_t *map, const lump_t *lump);
 }

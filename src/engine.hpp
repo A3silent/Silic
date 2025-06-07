@@ -10,6 +10,13 @@
 
 namespace silic {
 
+typedef struct wall_node {
+    mat4_t model;
+    const sector_t* sector;
+    struct wall_node* next;
+
+} wall_node_t, wall_list_t;
+
 class engine {
 public:
     engine();
@@ -24,11 +31,13 @@ public:
     vec2 size;
 
 private:
+    vec3_t get_random_color(const void* seed);
     map_t map;
     vec2 last_mouse_pos;
     wad_t* wad_ptr = nullptr;
     mesh_t quad_mesh;
     Input* input = nullptr;
+    wall_list_t* wall_list = nullptr;
 };
 
 } // namespace silic
