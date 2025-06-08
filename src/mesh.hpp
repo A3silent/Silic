@@ -17,11 +17,6 @@ typedef struct mesh {
 
 typedef struct vertex {
   vec3_t position;
-  vec2_t tex_coords;
-  int    texture_index;
-  int    texture_type;
-  float  light;
-  vec2_t max_coords;
 } vertex_t;
 
 typedef enum vertex_layout {

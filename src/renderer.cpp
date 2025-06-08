@@ -90,19 +90,17 @@ namespace silic{
     }
 
     void renderer::init_quad(){
-        float vertices[] = {
-            .5f, .5f, 0.f, //
-            .5f, -.5f, 0.f,
-            -.5f,-.5f, 0.f,
-            -.5f, .5f, 0.f
-        };  
+        vertex_t vertices[] = {
+            {.position = {.5f, .5f, 0.f}},   // top-right
+            {.position = {.5f, -.5f, 0.f}},  // bottom-right
+            {.position = {-.5f, -.5f, 0.f}}, // bottom-left
+            {.position = {-.5f, .5f, 0.f}},  // top-left
+        };
 
         uint32_t indices[] = {
             0, 1, 3,
             1, 2, 3
         };
-
-        GLuint vao, vbo, ebo;
 
         mesh_create(&quad_mesh, 4, vertices, 6, indices, false);
     }

@@ -17,6 +17,14 @@ typedef struct wall_node {
 
 } wall_node_t, wall_list_t;
 
+typedef struct flat_node {
+    mesh_t mesh;
+    const sector_t* sector;
+    struct flat_node* next;
+
+} flat_node_t, flat_list_t;
+
+
 class engine {
 public:
     engine();
@@ -32,12 +40,15 @@ public:
 
 private:
     vec3_t get_random_color(const void* seed);
+    mat4_t model_from_vertices(vec3_t v0, vec3_t v1, vec3_t v2, vec3_t v3);
     map_t map;
+    gl_map_t gl_map;
     vec2 last_mouse_pos;
     wad_t* wad_ptr = nullptr;
     mesh_t quad_mesh;
     Input* input = nullptr;
     wall_list_t* wall_list = nullptr;
+    flat_list_t* flat_list = nullptr; 
 };
 
 } // namespace silic

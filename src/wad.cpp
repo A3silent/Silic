@@ -3,6 +3,7 @@
 #include <math.h>
 #include <memory>
 #include <iostream>
+#include <cstring>
 
 #define READ_I16(buffer, offset)                                               \
   ((buffer)[(offset)] | ((buffer)[(offset + 1)] << 8))
@@ -129,6 +130,7 @@ namespace silic{
         for (int i = 0, j = 0; i < lump->size; i += 26, j++) {
             map->sectors[j].floor   = (int16_t)READ_I16(lump->data, i);
             map->sectors[j].ceiling = (int16_t)READ_I16(lump->data, i + 2);
+            map->sectors[j].light_level = (int16_t)READ_I16(lump->data, i + 20);
         }
     }
 
@@ -147,5 +149,97 @@ namespace silic{
         return 0; // Success
     }
 
+    #define GL_VERTICES_IDX 1
+    #define GL_SEGS_IDX     2
+    #define GL_SSECTORS_IDX 3
+
+    int wad_read_gl_map(std::string gl_mapname, gl_map_t *map, const wad_t *wad) {
+        int map_index = wad_find_lump(gl_mapname, wad);
+        if (map_index < 0) { return 1; }
+
+        if (strncmp(reinterpret_cast<const char*>(wad->lumps[map_index + GL_VERTICES_IDX].data.data()),
+                    "gNd2", 4) != 0) {
+            return 2;
+        }
+
+        if (strncmp(reinterpret_cast<const char*>(wad->lumps[map_index + GL_SEGS_IDX].data.data()), "gNd3",
+                    4) == 0) {
+            return 2;
+        }
+        read_gl_vertices(map, &wad->lumps[map_index + GL_VERTICES_IDX]);
+        read_gl_segments(map, &wad->lumps[map_index + GL_SEGS_IDX]);
+        read_gl_subsectors(map, &wad->lumps[map_index + GL_SSECTORS_IDX]);
+        //read_gl_nodes(map, &wad->lumps[map_index + GL_NODES_IDX]);
+
+        return 0;
+    }
+
+    void read_gl_vertices(gl_map_t *map, const lump_t *lump){
+        map->num_vertices = (lump->size - 4) / 8; // each vertex is 4+4=8 bytes
+        map->vertices     = new vec2_t[map->num_vertices];
+
+        map->min = (vec2_t){INFINITY, INFINITY};
+        map->max = (vec2_t){-INFINITY, -INFINITY};
+
+        for (int i = 4, j = 0; i < lump->size; i += 8, j++) {
+            map->vertices[j].x = (float)((int32_t)READ_I32(lump->data, i)) / (1 << 16);
+            map->vertices[j].y = (float)((int32_t)READ_I32(lump->data, i + 4)) / (1 << 16);
+
+            if (map->vertices[j].x < map->min.x) { map->min.x = map->vertices[j].x; }
+            if (map->vertices[j].y < map->min.y) { map->min.y = map->vertices[j].y; }
+            if (map->vertices[j].x > map->max.x) { map->max.x = map->vertices[j].x; }
+            if (map->vertices[j].y > map->max.y) { map->max.y = map->vertices[j].y; }
+        }
+    }
+
+    void read_gl_subsectors(gl_map_t *map, const lump_t *lump) {
+        map->num_subsectors = lump->size / 4; // each subsector is 4 bytes
+        map->subsectors     = new gl_subsector_t[map->num_subsectors];
+
+        for (int i = 0, j = 0; i < lump->size; i += 4, j++) {
+            map->subsectors[j].num_segs  = READ_I16(lump->data, i);
+            map->subsectors[j].first_seg = READ_I16(lump->data, i + 2);
+        }
+    }
+
+    void read_gl_segments(gl_map_t *map, const lump_t *lump){
+        map->num_segments = lump->size / 10; // each segment is 10 bytes
+        map->segments     = new gl_segment_t[map->num_segments];
+
+        for (int i = 0, j = 0; i < lump->size; i += 10, j++) {
+            map->segments[j].start_vertex = READ_I16(lump->data, i);
+            map->segments[j].end_vertex   = READ_I16(lump->data, i + 2);
+            map->segments[j].linedef      = READ_I16(lump->data, i + 4);
+            map->segments[j].side         = READ_I16(lump->data, i + 6);
+        }
+    }
+
+    void read_gl_nodes(gl_map_t *map, const lump_t *lump) {
+        // map->num_nodes = lump->size / 28; // each node is 28 bytes
+        // map->nodes     = new gl_node_t[map->num_nodes];
+
+        // for (int i = 0, j = 0; i < lump->size; i += 28, j++) {
+        //     map->nodes[j].partition.x       = (int16_t)READ_I16(lump->data, i);
+        //     map->nodes[j].partition.y       = (int16_t)READ_I16(lump->data, i + 2);
+        //     map->nodes[j].delta_partition.x = (int16_t)READ_I16(lump->data, i + 4);
+        //     map->nodes[j].delta_partition.y = (int16_t)READ_I16(lump->data, i + 6);
+
+        //     map->nodes[j].front_bbox[0] = READ_I16(lump->data, i + 8);
+        //     map->nodes[j].front_bbox[1] = READ_I16(lump->data, i + 10);
+        //     map->nodes[j].front_bbox[2] = READ_I16(lump->data, i + 12);
+        //     map->nodes[j].front_bbox[3] = READ_I16(lump->data, i + 14);
+
+        //     map->nodes[j].back_bbox[0] = READ_I16(lump->data, i + 16);
+        //     map->nodes[j].back_bbox[1] = READ_I16(lump->data, i + 18);
+        //     map->nodes[j].back_bbox[2] = READ_I16(lump->data, i + 20);
+        //     map->nodes[j].back_bbox[3] = READ_I16(lump->data, i + 22);
+
+        //     map->nodes[j].front_child_id = READ_I16(lump->data, i + 24);
+        //     map->nodes[j].back_child_id  = READ_I16(lump->data, i + 26);
+        // }
+    }
+
+    void wad_free_gl_map(gl_map_t *map) {
+    }
 
 }

@@ -6,12 +6,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define LINEDEF_FLAG_TWO_SIDED 0x0004 // Flag indicating a two-sided linedef
+
 typedef struct sector{
     int16_t floor, ceiling; // Floor and ceiling heights
+    int16_t light_level; // Light level of the sector
 } sector_t;
 
 typedef struct linedef{
     uint16_t start_idx, end_idx, flags, front_sidedef, back_sidedef; // Indices of the start and end vertices
+    
 } linedef_t;
 
 typedef struct sidedef{

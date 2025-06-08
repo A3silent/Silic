@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "map.hpp"
+#include "gl_map.hpp"
 
 struct lump_t{
     std::string name;
@@ -24,9 +25,15 @@ namespace silic{
     int load_wad(const char*filename, wad_t *wad);
     void wad_free(wad_t *wad);
     int wad_read_map(std::string mapname, map_t *map, const wad_t *wad);
+    int wad_read_gl_map(std::string gl_mapname, gl_map_t *map, const wad_t *wad);
     int wad_find_lump(std::string lumpname, const wad_t *wad);
     void read_vertices(map_t *map, const lump_t *lump);
     void read_linedefs(map_t *map, const lump_t *lump);
     void read_sidedefs(map_t *map, const lump_t *lump);
     void read_sectors(map_t *map, const lump_t *lump);
+    void read_gl_vertices(gl_map_t *map, const lump_t *lump);
+    void read_gl_segments(gl_map_t *map, const lump_t *lump);
+    void read_gl_subsectors(gl_map_t *map, const lump_t *lump);
+    void read_gl_nodes(gl_map_t *map, const lump_t *lump);
+    void wad_free_gl_map(gl_map_t *map);
 }
