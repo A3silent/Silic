@@ -68,7 +68,6 @@ namespace silic {
         glfwSetCursorPosCallback(window, silic::Input::mouse_position_callback);
         eng.init(&input, &wad, mapname, WIDTH, HEIGHT);
 
-        float angle = 0.f;
         char title[128];
         float last = 0.f;
         // render loop
@@ -78,16 +77,16 @@ namespace silic {
             float now   = glfwGetTime();
             float dTime = now - last;
             last        = now;
-            angle += 1.2*dTime;
 
             eng.update(dTime);
 
             glfwPollEvents();
             snprintf(title, 128, "Silic || FPS: %.0f", 1.f/dTime);
             glfwSetWindowTitle(window, title);
-
+            
+            eng.m_renderer.renderer_clear();
             eng.render();
-
+            
             glfwSwapBuffers(window);
         }
         glfwTerminate();

@@ -17,12 +17,9 @@ typedef struct mesh {
 
 typedef struct vertex {
   vec3_t position;
+  vec2_t texcoord;
 } vertex_t;
 
-typedef enum vertex_layout {
-  VERTEX_LAYOUT_PLAIN,
-  VERTEX_LAYOUT_FULL,
-} vertex_layout_t;
 
 void mesh_create(mesh_t *mesh,
                  size_t num_vertices, const void *vertices, size_t num_indices,

@@ -1,9 +1,9 @@
 #version 450 core
-
+in vec2 texCoord;
 out vec4 fragColor;
-uniform vec4 color;
-
+uniform sampler1D palette;
+uniform int color;
 void main()
 {
-	fragColor = color;
+	fragColor = texelFetch(palette, color, 0);
 };

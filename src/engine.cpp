@@ -1,10 +1,12 @@
 #include "engine.hpp"
 #include "matrix.hpp"
+#include "palette.hpp"
 #include <iostream>
 #include <math.h>
 #include "input.hpp" // Add this line if is_button_pressed is declared here, or declare the function below if not.
 
 #define FOV (3.14159265358979323846 / 3.f)
+#define PI (3.14159265358979323846)
 #define PLAYER_SPEED (5.f)
 #define MOUSE_SENSITIVITY (0.002f)
 #define SCALE (50.f)
@@ -24,7 +26,7 @@ void engine::init(Input* in, wad_t* wad, const std::string& mapname, int width, 
 
     camera = {
         .position = {0.f, 0.f, 3.f},
-        .yaw = - (3.14159265358979323846 / 2.f),
+        .yaw = (PI / 2.f),
         .pitch = 0.f,
     };
 
@@ -32,12 +34,12 @@ void engine::init(Input* in, wad_t* wad, const std::string& mapname, int width, 
     mat4_t projection = mat4_perspective(FOV, size.x/size.y, .1f, 1000.f);
     m_renderer.renderer_set_projection(projection);
     
-    float vertices[] = {
-        1.f, 1.f, 0.f, //
-        0.f, 1.f, 0.f,
-        0.f, 0.f, 0.f,
-        1.f, 0.f, 0.f
-    };  
+    vertex_t vertices[] = {
+        {.position = {1.f, 1.f, 0.f}}, // top-right
+        {.position = {0.f, 1.f, 0.f}}, // bottom-right
+        {.position = {0.f, 0.f, 0.f}}, // bottom-left
+        {.position = {1.0, 0.f, 0.f}}, // top-left
+    };
 
     uint32_t indices[] = {
         0, 1, 3,
@@ -62,52 +64,57 @@ void engine::init(Input* in, wad_t* wad, const std::string& mapname, int width, 
     //               << gl_map.vertices[i].y << ")" << std::endl;
     // }
 
+    generate_meshes(&map, &gl_map);
+    wad_read_playpal(&palette, wad);
+    GLuint palette_texture = color_create_texture(&palette);
+    m_renderer.renderer_set_palette_texture(palette_texture);
+}
+
+void engine::generate_meshes(const map_t *map, const gl_map_t* gl_map){
+
     flat_node_t* tail_flat = nullptr;
-    for(int i = 0; i < gl_map.num_subsectors; i++) {
+    for(int i = 0; i < gl_map->num_subsectors; i++) {
         flat_node_t* node = new flat_node_t;
         node ->next = nullptr;
         node ->sector = nullptr;
-        gl_subsector_t* subsector = &gl_map.subsectors[i];
+        gl_subsector_t* subsector = &gl_map->subsectors[i];
         size_t n_vertices = subsector->num_segs;
         vertex_t* vertices = new vertex_t[n_vertices];
 
         for (int j = 0; j < subsector->num_segs; j++) {
-            gl_segment_t* segment = &gl_map.segments[j + subsector->first_seg];
+            gl_segment_t* segment = &gl_map->segments[j + subsector->first_seg];
 
             if(node ->sector == nullptr && segment->linedef != 0xffff) {
-                linedef_t* line = &map.linedefs[segment->linedef];
+                linedef_t* line = &map->linedefs[segment->linedef];
                 int sec = -1;
 
-                if (line -> flags & LINEDEF_FLAG_TWO_SIDED) {
-                    if(segment->side == 0) {
-                        sec = map.sidedefs[line->front_sidedef].sector_idx;
-                    } else {
-                        sec = map.sidedefs[line->back_sidedef].sector_idx;
-                    }
-                }else{
-                sec = map.sidedefs[line->front_sidedef].sector_idx;
-                }
-                if (sec >= 0) { node->sector = &map.sectors[sec]; }
+                int sidedef_idx = (line->flags & LINEDEF_FLAG_TWO_SIDED)
+                    ? (segment->side == 0 ? line->front_sidedef : line->back_sidedef)
+                    : line->front_sidedef;
+                sec = map->sidedefs[sidedef_idx].sector_idx;
+
+                if (sec >= 0) { node->sector = &map->sectors[sec]; }
             }
 
             vec2_t v;
             if(segment->start_vertex & VERT_IS_GL) {
-                v = gl_map.vertices[segment->start_vertex & 0x7fff];
+                v = gl_map->vertices[segment->start_vertex & 0x7fff];
             }else{
-                v = map.vertices[segment->start_vertex];
+                v = map->vertices[segment->start_vertex];
             }
 
             vertices[j] = (vertex_t){
-                .position = {v.x / 50.f, 0.f, v.y / 50.f},
+                .position = {v.x / SCALE, 0.f, -v.y / SCALE},
+                .texcoord = {v.x / SCALE, -v.y / SCALE}
             };
         }
 
         size_t num_indices = 3 * (n_vertices - 2);
         uint32_t *indices = new uint32_t[num_indices];
         for (int j = 0, k = 1; j < num_indices; j += 3, k++) {
-        indices[j]     = 0;
-        indices[j + 1] = k;
-        indices[j + 2] = k + 1;
+            indices[j]     = 0;
+            indices[j + 1] = k;
+            indices[j + 2] = k + 1;
         }
 
         mesh_create(&node->mesh, n_vertices, vertices, num_indices, indices, false);
@@ -122,24 +129,24 @@ void engine::init(Input* in, wad_t* wad, const std::string& mapname, int width, 
 
 
     wall_node_t* tail = nullptr;
-    for(int i = 0; i < map.num_linedefs; i++) {
+    for(int i = 0; i < map->num_linedefs; i++) {
             //floor
-        linedef_t* line = &map.linedefs[i];
+        linedef_t* line = &map->linedefs[i];
         if(line->flags & LINEDEF_FLAG_TWO_SIDED) {
             wall_node_t* floor_node = new wall_node_t;
             floor_node->next = nullptr;
-            vec2_t start = map.vertices[line->start_idx];
-            vec2_t end = map.vertices[line->end_idx];
-            sidedef_t* front_sidedef = &map.sidedefs[line->front_sidedef];
-            sector_t* front_sector = &map.sectors[front_sidedef->sector_idx];
+            vec2_t start = map->vertices[line->start_idx];
+            vec2_t end = map->vertices[line->end_idx];
+            sidedef_t* front_sidedef = &map->sidedefs[line->front_sidedef];
+            sector_t* front_sector = &map->sectors[front_sidedef->sector_idx];
 
-            sidedef_t* back_sidedef = &map.sidedefs[line->back_sidedef];
-            sector_t* back_sector = &map.sectors[back_sidedef->sector_idx];
+            sidedef_t* back_sidedef = &map->sidedefs[line->back_sidedef];
+            sector_t* back_sector = &map->sectors[back_sidedef->sector_idx];
 
-            vec3_t f0 = {start.x, (float)front_sector->floor, start.y};
-            vec3_t f1 = {end.x, (float)front_sector->floor, end.y};
-            vec3_t f2 = {end.x, (float)back_sector->floor, end.y};
-            vec3_t f3 = {start.x, (float)back_sector->floor, start.y};
+            vec3_t f0 = {start.x, (float)front_sector->floor, -start.y};
+            vec3_t f1 = {end.x, (float)front_sector->floor, -end.y};
+            vec3_t f2 = {end.x, (float)back_sector->floor, -end.y};
+            vec3_t f3 = {start.x, (float)back_sector->floor, -start.y};
 
             floor_node->model = model_from_vertices(f0, f1, f2, f3);
             floor_node->sector = front_sector;
@@ -155,10 +162,10 @@ void engine::init(Input* in, wad_t* wad, const std::string& mapname, int width, 
             wall_node_t* ceiling_node = new wall_node_t;
             ceiling_node->next = nullptr;
 
-            vec3_t c0 = {start.x, (float)front_sector->ceiling, start.y};
-            vec3_t c1 = {end.x, (float)front_sector->ceiling, end.y};
-            vec3_t c2 = {end.x, (float)back_sector->ceiling, end.y};
-            vec3_t c3 = {start.x, (float)back_sector->ceiling, start.y};
+            vec3_t c0 = {start.x, (float)front_sector->ceiling, -start.y};
+            vec3_t c1 = {end.x, (float)front_sector->ceiling, -end.y};
+            vec3_t c2 = {end.x, (float)back_sector->ceiling, -end.y};
+            vec3_t c3 = {start.x, (float)back_sector->ceiling, -start.y};
 
             ceiling_node->model = model_from_vertices(c0, c1, c2, c3);
             ceiling_node->sector = front_sector;
@@ -168,15 +175,15 @@ void engine::init(Input* in, wad_t* wad, const std::string& mapname, int width, 
         }else{
             wall_node_t* node = new wall_node_t;
             node->next = nullptr;
-            vec2_t start = map.vertices[line->start_idx];
-            vec2_t end = map.vertices[line->end_idx];
-            sidedef_t* sidedef = &map.sidedefs[line->front_sidedef];
-            sector_t* sector = &map.sectors[sidedef->sector_idx];
+            vec2_t start = map->vertices[line->start_idx];
+            vec2_t end = map->vertices[line->end_idx];
+            sidedef_t* sidedef = &map->sidedefs[line->front_sidedef];
+            sector_t* sector = &map->sectors[sidedef->sector_idx];
 
-            vec3_t f0 = {start.x, (float)sector->floor, start.y};
-            vec3_t f1 = {end.x, (float)sector->floor, end.y};
-            vec3_t f2 = {end.x, (float)sector->ceiling, end.y};
-            vec3_t f3 = {start.x, (float)sector->ceiling, start.y};
+            vec3_t f0 = {start.x, (float)sector->floor, -start.y};
+            vec3_t f1 = {end.x, (float)sector->floor, -end.y};
+            vec3_t f2 = {end.x, (float)sector->ceiling, -end.y};
+            vec3_t f3 = {start.x, (float)sector->ceiling, -start.y};
 
             node->model = model_from_vertices(f0, f1, f2, f3);
             node->sector = sector;
@@ -190,6 +197,7 @@ void engine::init(Input* in, wad_t* wad, const std::string& mapname, int width, 
         }
     }
 }
+
 void engine::update(float delta) {
     float speed = input->is_button_pressed(button::KEY_LSHIFT) ? PLAYER_SPEED * 2.f : PLAYER_SPEED;
     camera_update_direction_vectors(&camera);
@@ -237,31 +245,28 @@ void engine::update(float delta) {
 
 
 void engine::render() {
-    m_renderer.renderer_clear();
     mat4_t view = mat4_look_at(camera.position, vec3_add(camera.position, camera.forward), camera.up);
     m_renderer.renderer_set_viewport(view);
     for(wall_node_t* node = wall_list; node != nullptr; node = node->next) {
-        vec3_t color = get_random_color((void*)node->sector);
-        m_renderer.renderer_draw_mesh(&quad_mesh, node->model, (vec4_t){color.x, color.y, color.z, 1.f});
+        //vec3_t color = get_random_color((void*)node->sector);
+        srand((uintptr_t)node->sector);
+        int color = rand() % NUM_COLORS;
+        m_renderer.renderer_draw_mesh(&quad_mesh, node->model, color);
     }
     //floor
     for(flat_node_t* node = flat_list; node != nullptr; node = node->next) {
-        vec3_t color = vec3_scale(get_random_color((void*)node->sector), node->sector->light_level / 255.f * 0.7f);
+        //vec3_t color = vec3_scale(get_random_color((void*)node->sector), node->sector->light_level / 255.f * 0.7f);
+        srand((uintptr_t)node->sector);
+        int color = rand() % NUM_COLORS;
         m_renderer.renderer_draw_mesh(
             &node->mesh,
             mat4_translate((vec3_t){0.f, node->sector->floor / SCALE, 0.f}),
-            (vec4_t){color.x, color.y, color.z, 1.f});
+            color);
 
-        color = vec3_scale(get_random_color((void*)node->sector), node->sector->light_level / 255.f);
         m_renderer.renderer_draw_mesh(&node->mesh, 
             mat4_translate((vec3_t){0.f, node->sector->ceiling / SCALE, 0.f}),
-            (vec4_t){color.x, color.y, color.z, 1.f});
+            color);
     }
-
-    //ceiling
-    // for(flat_node_t* node = flat_list; node != nullptr; node = node->next) {
-    //     
-    // }
 
 }
 

@@ -14,8 +14,13 @@ namespace silic {
                   glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_t) * num_vertices, vertices,
                                  GL_STATIC_DRAW);
 
-                  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+                  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t),
+                                        (void *)offsetof(vertex_t, position));
                   glEnableVertexAttribArray(0);
+
+                  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertex_t),
+                                        (void *)offsetof(vertex_t, texcoord));
+                  glEnableVertexAttribArray(1);                      
 
                   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
                   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint32_t) * num_indices, indices,

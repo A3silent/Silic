@@ -77,6 +77,29 @@ namespace silic{
         return -1;
     }
 
+    int wad_find_lump_32(std::string lumpname, const wad_t *wad) {
+        std::string lumpname8 = lumpname.substr(0, 32);
+        lumpname8.resize(32, '\0');
+        for (int i = 0; i < wad->num_lumps; i++) {
+            if (wad->lumps[i].name == lumpname8) {
+                return i; 
+            }
+        }
+        return -1;
+    }
+
+    int wad_read_playpal(palette_t *palette, const wad_t *wad){
+        std::string lumpname = "PLAYPAL";
+        int playpal_index = wad_find_lump(lumpname, wad);
+        if(playpal_index < 0) {
+            return 1; // PLAYPAL lump not found
+        }
+
+        memcpy(palette->color, wad->lumps[playpal_index].data.data(), NUM_COLORS * 3);
+
+        return 0;
+    }
+
     #define THINGS_IDX   1
     #define LINEDEFS_IDX 2
     #define SIDEDEFS_IDX 3
@@ -214,6 +237,7 @@ namespace silic{
         }
     }
 
+    
     void read_gl_nodes(gl_map_t *map, const lump_t *lump) {
         // map->num_nodes = lump->size / 28; // each node is 28 bytes
         // map->nodes     = new gl_node_t[map->num_nodes];

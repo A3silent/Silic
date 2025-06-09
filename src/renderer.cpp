@@ -18,6 +18,7 @@ namespace silic{
         width = w;
         height = h;
         glClearColor(.2f, .2f, .2f, 1.f);
+        glEnable(GL_DEPTH_TEST);
         init_quad();
         init_shader();
         init_projection();
@@ -48,16 +49,19 @@ namespace silic{
         model_location = glGetUniformLocation(program, "model");
         view_location = glGetUniformLocation(program, "view");
         color_location = glGetUniformLocation(program, "color");
+
+        GLuint palette_location = glGetUniformLocation(program, "palette");
+        glUniform1i(palette_location, 0); // Texture unit 0 for palette texture
     }
 
-    void renderer::renderer_draw_mesh(mesh_t *mesh, mat4_t transformation, vec4_t color){
-        glUniform4fv(color_location, 1, color.v);
+    void renderer::renderer_draw_mesh(mesh_t *mesh, mat4_t transformation, int color){
+        glUniform1i(color_location, color);
         glUniformMatrix4fv(model_location, 1, GL_FALSE, transformation.v);
         glBindVertexArray(mesh->vao);
         glDrawElements(GL_TRIANGLES, mesh->num_indices, GL_UNSIGNED_INT, NULL);
     }
 
-    void renderer::renderer_draw_point(vec2_t point, float size,vec4_t color){
+    void renderer::renderer_draw_point(vec2_t point, float size, int color){
         mat4_t translation = mat4_translate((vec3_t){point.x, point.y, 0.f});
         mat4_t scale = mat4_scale((vec3_t){size, size, 1.f});
         mat4_t model = mat4_mul(scale, translation);
@@ -67,7 +71,7 @@ namespace silic{
 
     
 
-    void renderer::renderer_draw_line(vec2_t p0, vec2_t p1, float width, vec4_t color) {
+    void renderer::renderer_draw_line(vec2_t p0, vec2_t p1, float width, int color) {
         float x = p1.x - p0.x, y = p0.y - p1.y;
         float r = sqrtf(x * x + y * y), angle = atan2f(y, x);
 
@@ -80,7 +84,12 @@ namespace silic{
         renderer_draw_mesh(&quad_mesh, model, color);
     }
 
-    void renderer::renderer_draw_quad(vec2_t center, vec2_t size, float angle, vec4_t color) {
+    void renderer::renderer_set_palette_texture(GLuint texture){
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_1D, texture);
+    }
+
+    void renderer::renderer_draw_quad(vec2_t center, vec2_t size, float angle, int color) {
         mat4_t translation = mat4_translate((vec3_t){center.x, center.y, 0.f});
         mat4_t scale       = mat4_scale((vec3_t){size.x, size.y, 1.f});
         mat4_t rotation    = mat4_rotate((vec3_t){0.f, 0.f, 1.f}, angle);
@@ -91,10 +100,10 @@ namespace silic{
 
     void renderer::init_quad(){
         vertex_t vertices[] = {
-            {.position = {.5f, .5f, 0.f}},   // top-right
-            {.position = {.5f, -.5f, 0.f}},  // bottom-right
-            {.position = {-.5f, -.5f, 0.f}}, // bottom-left
-            {.position = {-.5f, .5f, 0.f}},  // top-left
+            { .position = { 0.5f,  0.5f, 0.f }, .texcoord = {0.f, 0.f} },   // top-right
+            { .position = { 0.5f, -0.5f, 0.f }, .texcoord = {0.f, 0.f} },   // bottom-right
+            { .position = {-0.5f, -0.5f, 0.f }, .texcoord = {0.f, 0.f} },   // bottom-left
+            { .position = {-0.5f,  0.5f, 0.f }, .texcoord = {0.f, 0.f} },   // top-left
         };
 
         uint32_t indices[] = {

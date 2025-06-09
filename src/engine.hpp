@@ -41,6 +41,7 @@ public:
 private:
     vec3_t get_random_color(const void* seed);
     mat4_t model_from_vertices(vec3_t v0, vec3_t v1, vec3_t v2, vec3_t v3);
+    void generate_meshes(const map_t *map, const gl_map_t* gl_map);
     map_t map;
     gl_map_t gl_map;
     vec2 last_mouse_pos;
@@ -49,6 +50,7 @@ private:
     Input* input = nullptr;
     wall_list_t* wall_list = nullptr;
     flat_list_t* flat_list = nullptr; 
+    palette_t palette;
 };
 
 } // namespace silic

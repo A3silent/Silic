@@ -5,12 +5,13 @@
 
 #include "map.hpp"
 #include "gl_map.hpp"
+#include "palette.hpp"
 
 struct lump_t{
     std::string name;
-    uint32_t offset;
-    uint32_t size;
     std::vector<uint8_t> data; 
+    uint32_t size;
+    uint32_t offset;
 };
 
 struct wad_t {
@@ -27,6 +28,7 @@ namespace silic{
     int wad_read_map(std::string mapname, map_t *map, const wad_t *wad);
     int wad_read_gl_map(std::string gl_mapname, gl_map_t *map, const wad_t *wad);
     int wad_find_lump(std::string lumpname, const wad_t *wad);
+    int wad_find_lump_32(std::string lumpname, const wad_t *wad);
     void read_vertices(map_t *map, const lump_t *lump);
     void read_linedefs(map_t *map, const lump_t *lump);
     void read_sidedefs(map_t *map, const lump_t *lump);
@@ -36,4 +38,5 @@ namespace silic{
     void read_gl_subsectors(gl_map_t *map, const lump_t *lump);
     void read_gl_nodes(gl_map_t *map, const lump_t *lump);
     void wad_free_gl_map(gl_map_t *map);
+    int wad_read_playpal(palette_t *palette, const wad_t *wad);
 }
