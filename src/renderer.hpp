@@ -22,6 +22,7 @@ namespace silic{
             void renderer_set_projection(mat4_t projection);
             void renderer_draw_mesh(mesh_t *mesh, mat4_t transformation, int color);
             void renderer_set_palette_texture(GLuint texture);
+            void renderer_set_draw_texture(GLuint texture);
             void renderer_draw_point(vec2_t point, float size, int color);
             void renderer_draw_line(vec2_t p0, vec2_t p1, float width, int color);
             void renderer_draw_quad(vec2_t center, vec2_t size, float angle, int color);
@@ -33,6 +34,7 @@ namespace silic{
             GLuint model_location;
             GLuint projection_location;
             GLuint view_location;
+            GLuint use_texture_location;
                     
         private:
             float width, height;

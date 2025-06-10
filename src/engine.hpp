@@ -39,10 +39,11 @@ public:
     vec2 size;
 
 private:
-    vec3_t get_random_color(const void* seed);
     mat4_t model_from_vertices(vec3_t v0, vec3_t v1, vec3_t v2, vec3_t v3);
     void generate_meshes(const map_t *map, const gl_map_t* gl_map);
     map_t map;
+    size_t num_flats;
+    GLuint *flat_texture = nullptr;
     gl_map_t gl_map;
     vec2 last_mouse_pos;
     wad_t* wad_ptr = nullptr;

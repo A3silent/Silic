@@ -49,9 +49,21 @@ namespace silic{
         model_location = glGetUniformLocation(program, "model");
         view_location = glGetUniformLocation(program, "view");
         color_location = glGetUniformLocation(program, "color");
-
+        use_texture_location = glGetUniformLocation(program, "useTexture");
         GLuint palette_location = glGetUniformLocation(program, "palette");
         glUniform1i(palette_location, 0); // Texture unit 0 for palette texture
+        GLuint texture_location = glGetUniformLocation(program, "tex");
+        glUniform1i(texture_location, 1);
+    }
+
+    void renderer::renderer_set_draw_texture(GLuint texture) {
+        if (texture == 0) {
+            glUniform1i(use_texture_location, 0);
+        } else {
+            glUniform1i(use_texture_location, 1);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, texture);
+        } 
     }
 
     void renderer::renderer_draw_mesh(mesh_t *mesh, mat4_t transformation, int color){
@@ -100,10 +112,10 @@ namespace silic{
 
     void renderer::init_quad(){
         vertex_t vertices[] = {
-            { .position = { 0.5f,  0.5f, 0.f }, .texcoord = {0.f, 0.f} },   // top-right
-            { .position = { 0.5f, -0.5f, 0.f }, .texcoord = {0.f, 0.f} },   // bottom-right
-            { .position = {-0.5f, -0.5f, 0.f }, .texcoord = {0.f, 0.f} },   // bottom-left
-            { .position = {-0.5f,  0.5f, 0.f }, .texcoord = {0.f, 0.f} },   // top-left
+            { .position = { 0.5f,  0.5f, 0.f }},   // top-right
+            { .position = { 0.5f, -0.5f, 0.f }},   // bottom-right
+            { .position = {-0.5f, -0.5f, 0.f }},   // bottom-left
+            { .position = {-0.5f,  0.5f, 0.f }},   // top-left
         };
 
         uint32_t indices[] = {

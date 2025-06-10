@@ -68,6 +68,13 @@ void engine::init(Input* in, wad_t* wad, const std::string& mapname, int width, 
     wad_read_playpal(&palette, wad);
     GLuint palette_texture = color_create_texture(&palette);
     m_renderer.renderer_set_palette_texture(palette_texture);
+
+    flat_texture_t* flat_textures = wad_read_flat_texture(&num_flats, wad);
+    //std::cout << "Number of flats: " << num_flats << std::endl;
+    flat_texture = new GLuint[num_flats];
+    for (int i = 0; i < num_flats; i++) {
+        flat_texture[i] = generate_flat_texture(&flat_textures[i]);
+    }
 }
 
 void engine::generate_meshes(const map_t *map, const gl_map_t* gl_map){
@@ -105,7 +112,7 @@ void engine::generate_meshes(const map_t *map, const gl_map_t* gl_map){
 
             vertices[j] = (vertex_t){
                 .position = {v.x / SCALE, 0.f, -v.y / SCALE},
-                .texcoord = {v.x / SCALE, -v.y / SCALE}
+                .texcoord = {v.x / FLAT_TEXTURE_SIZE, -v.y / FLAT_TEXTURE_SIZE}
             };
         }
 
@@ -247,36 +254,35 @@ void engine::update(float delta) {
 void engine::render() {
     mat4_t view = mat4_look_at(camera.position, vec3_add(camera.position, camera.forward), camera.up);
     m_renderer.renderer_set_viewport(view);
+
+    m_renderer.renderer_set_draw_texture(0);
     for(wall_node_t* node = wall_list; node != nullptr; node = node->next) {
-        //vec3_t color = get_random_color((void*)node->sector);
+        
         srand((uintptr_t)node->sector);
         int color = rand() % NUM_COLORS;
         m_renderer.renderer_draw_mesh(&quad_mesh, node->model, color);
     }
     //floor
     for(flat_node_t* node = flat_list; node != nullptr; node = node->next) {
-        //vec3_t color = vec3_scale(get_random_color((void*)node->sector), node->sector->light_level / 255.f * 0.7f);
-        srand((uintptr_t)node->sector);
-        int color = rand() % NUM_COLORS;
+        int floor_index =   node->sector->floor_tex < 0 || node->sector->floor_tex >= num_flats
+                                    ? 0
+                                    : flat_texture[node->sector->floor_tex];
+        int ceiling_index = node->sector->ceiling_tex < 0 || node->sector->ceiling_tex >= num_flats
+                                    ? 0
+                                    : flat_texture[node->sector->ceiling_tex];
+
+        m_renderer.renderer_set_draw_texture(floor_index);
         m_renderer.renderer_draw_mesh(
             &node->mesh,
             mat4_translate((vec3_t){0.f, node->sector->floor / SCALE, 0.f}),
-            color);
+            0);
 
+        m_renderer.renderer_set_draw_texture(ceiling_index);
         m_renderer.renderer_draw_mesh(&node->mesh, 
             mat4_translate((vec3_t){0.f, node->sector->ceiling / SCALE, 0.f}),
-            color);
+            0);
     }
 
-}
-
-vec3_t engine::get_random_color(const void *seed){
-    srand((uintptr_t)seed);
-    return (vec3_t){
-        (float)(rand() % 1000) / 1000.f,
-        (float)(rand() % 1000) / 1000.f,
-        (float)(rand() % 1000) / 1000.f
-    };
 }
 
 mat4_t engine::model_from_vertices(vec3_t v0, vec3_t v1, vec3_t v2, vec3_t v3) {

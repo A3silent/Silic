@@ -11,6 +11,7 @@
 typedef struct sector{
     int16_t floor, ceiling; // Floor and ceiling heights
     int16_t light_level; // Light level of the sector
+    int floor_tex, ceiling_tex; // Textures for floor and ceiling
 } sector_t;
 
 typedef struct linedef{

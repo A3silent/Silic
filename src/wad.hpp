@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "map.hpp"
+#include "flat_texture.hpp"
 #include "gl_map.hpp"
 #include "palette.hpp"
 
@@ -32,11 +33,12 @@ namespace silic{
     void read_vertices(map_t *map, const lump_t *lump);
     void read_linedefs(map_t *map, const lump_t *lump);
     void read_sidedefs(map_t *map, const lump_t *lump);
-    void read_sectors(map_t *map, const lump_t *lump);
+    void read_sectors(map_t *map, const lump_t *lump, const wad_t *wad);
     void read_gl_vertices(gl_map_t *map, const lump_t *lump);
     void read_gl_segments(gl_map_t *map, const lump_t *lump);
     void read_gl_subsectors(gl_map_t *map, const lump_t *lump);
     void read_gl_nodes(gl_map_t *map, const lump_t *lump);
     void wad_free_gl_map(gl_map_t *map);
     int wad_read_playpal(palette_t *palette, const wad_t *wad);
+    flat_texture_t* wad_read_flat_texture(size_t* num, const wad_t *wad);
 }
